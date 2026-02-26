@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-장비 노후 감지 추론 엔진 (lstm_aug100_extended 모델)
+장비 노후 감지 추론 엔진 (lstm_7feat 모델)
 
-입력: 10초 윈도우 x 24 features (ULVAC.Stage1.Temp1 ~ PWPDS.Data)
-출력: 7개 타겟 5초 후 예측 (Ar.MFC.i, Ion.Gauge.i, Baratron.Gauge.i, OES.Data6,
-      PLA5.Match.DCBias, SBRF5.Forward, SBRF5.Reflect)
+입력: 10초 윈도우 x 7 features
+출력: 7개 타겟 5초 후 예측
+  Ar.MFC.i, Baratron.Gauge.i, PLA5.Match.DCBias, EN4.Power,
+  SBRF5.SetPower, PWPDS.Data, Ion.Gauge.i
 """
 
 import os
@@ -20,29 +21,14 @@ import threading
 
 # 모델 경로
 MODEL_DIR = '/home/goo4168/baco/train/models/PVD4'
-MODEL_PATH = os.path.join(MODEL_DIR, 'lstm_aug100_extended_finetuned_best.pth')
-SCALER_INPUT_PATH = os.path.join(MODEL_DIR, 'scaler_input_finetuned.pkl')
-SCALER_TARGET_PATH = os.path.join(MODEL_DIR, 'scaler_target_finetuned.pkl')
+MODEL_PATH = os.path.join(MODEL_DIR, 'lstm_7feat_best.pth')
+SCALER_INPUT_PATH  = os.path.join(MODEL_DIR, 'scaler_input_lstm_7feat.pkl')
+SCALER_TARGET_PATH = os.path.join(MODEL_DIR, 'scaler_target_lstm_7feat.pkl')
 
-# 24개 입력 칼럼 (Timer 제외, 학습 데이터 순서)
-INPUT_COLUMNS = [
-    'ULVAC.Stage1.Temp1', 'ULVAC.Stage2.Temp1',
-    'EN4.Power', 'EN4.Current', 'EN4.Volt',
-    'PLA5.Match.Load.Posi', 'PLA5.Match.Tune.Posi',
-    'PLA5.Match.Load.Pre', 'PLA5.Match.Tune.Pre',
-    'PLA5.Match.DCBias',
-    'SBRF5.Forward', 'SBRF5.Reflect', 'SBRF5.SetPower',
-    'PWESC.Volt1', 'PWESC.Volt2',
-    'OES.Data6',
-    'Line.Gauge.i', 'Ion.Gauge.i', 'Baratron.Gauge.i',
-    'Ar.MFC.i', 'Ar2.MFC.i', 'Ar.MFC.o', 'Ar2.MFC.o',
-    'PWPDS.Data',
-]
-
-# 7개 타겟 칼럼
-TARGET_COLUMNS = [
-    'Ar.MFC.i', 'Ion.Gauge.i', 'Baratron.Gauge.i', 'OES.Data6',
-    'PLA5.Match.DCBias', 'SBRF5.Forward', 'SBRF5.Reflect',
+# 7개 입력/타겟 칼럼
+FEATURES = [
+    'Ar.MFC.i', 'Baratron.Gauge.i', 'PLA5.Match.DCBias',
+    'EN4.Power', 'SBRF5.SetPower', 'PWPDS.Data', 'Ion.Gauge.i',
 ]
 
 INPUT_WINDOW = 10
@@ -51,8 +37,6 @@ ANOMALY_THRESHOLD_PCT = 10.0
 
 
 class LSTMPredictor(nn.Module):
-    """LSTM 기반 예측 모델 (pvd_predictor.py 구조 - input_proj 없음, Softmax in attention)"""
-
     def __init__(self, input_size: int, output_size: int,
                  hidden_size: int = 128, num_layers: int = 2, dropout: float = 0.2):
         super().__init__()
@@ -99,11 +83,8 @@ class AgingInferenceEngine:
         self.prediction_queue = deque()
         self.data_index = 0
 
-        # 각 칼럼별 실제값/예측값 히스토리
         self.actuals_history: List[Dict] = []
         self.predictions_history: List[Dict] = []
-
-        # 이상 로그
         self.anomaly_logs: List[Dict] = []
         self.current_anomaly_intervals: Dict[str, Dict] = {}
 
@@ -116,12 +97,12 @@ class AgingInferenceEngine:
                 print(f"[AgingEngine] 모델 파일 없음: {MODEL_PATH}")
                 return False
 
-            self.scaler_input = joblib.load(SCALER_INPUT_PATH)
+            self.scaler_input  = joblib.load(SCALER_INPUT_PATH)
             self.scaler_target = joblib.load(SCALER_TARGET_PATH)
 
             self.model = LSTMPredictor(
-                input_size=len(INPUT_COLUMNS),
-                output_size=len(TARGET_COLUMNS),
+                input_size=len(FEATURES),
+                output_size=len(FEATURES),
             )
             checkpoint = torch.load(MODEL_PATH, map_location=self.device, weights_only=False)
             self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -144,9 +125,9 @@ class AgingInferenceEngine:
 
         with self.lock:
             try:
-                # 24개 입력 피처 추출
+                # 7개 입력 피처 추출
                 values = []
-                for col in INPUT_COLUMNS:
+                for col in FEATURES:
                     val = data.get(col, 0)
                     if val is None or (isinstance(val, float) and np.isnan(val)):
                         val = 0
@@ -174,46 +155,29 @@ class AgingInferenceEngine:
 
                 ts = timestamp or datetime.now().isoformat()
                 current_idx = self.data_index
-                target_idx = current_idx + PREDICTION_HORIZON
+                target_idx  = current_idx + PREDICTION_HORIZON
                 self.data_index += 1
 
-                # 실제값 (7개 칼럼)
-                actuals = {}
-                for col in TARGET_COLUMNS:
-                    val = data.get(col, 0)
-                    actuals[col] = float(val) if val is not None else 0.0
+                # 실제값
+                actuals = {col: float(data.get(col, 0) or 0) for col in FEATURES}
 
-                # 예측값 (7개 칼럼)
-                preds = {}
-                for i, col in enumerate(TARGET_COLUMNS):
-                    preds[col] = float(pred_original[i])
+                # 예측값
+                preds = {col: float(pred_original[i]) for i, col in enumerate(FEATURES)}
 
-                # 예측 대기열에 저장
+                # 예측 대기열
                 self.prediction_queue.append({
                     'target_index': target_idx,
                     'predictions': preds.copy(),
                 })
 
-                # 실제값 히스토리
-                self.actuals_history.append({
-                    'timestamp': ts,
-                    'index': current_idx,
-                    **actuals,
-                })
+                self.actuals_history.append({'timestamp': ts, 'index': current_idx, **actuals})
+                self.predictions_history.append({'timestamp': ts, 'index': target_idx, **preds})
 
-                # 예측값 히스토리 (target_idx 기준)
-                self.predictions_history.append({
-                    'timestamp': ts,
-                    'index': target_idx,
-                    **preds,
-                })
-
-                # 최대 1000개 유지
                 if len(self.predictions_history) > 1000:
                     self.predictions_history = self.predictions_history[-1000:]
-                    self.actuals_history = self.actuals_history[-1000:]
+                    self.actuals_history     = self.actuals_history[-1000:]
 
-                # 5초 전 예측과 현재 실제값 비교 (각 칼럼별)
+                # 5초 전 예측과 현재 실제값 비교
                 matched_pred = None
                 while self.prediction_queue:
                     pending = self.prediction_queue[0]
@@ -223,9 +187,9 @@ class AgingInferenceEngine:
                         break
 
                 if matched_pred:
-                    for col in TARGET_COLUMNS:
+                    for col in FEATURES:
                         actual_val = actuals[col]
-                        pred_val = matched_pred['predictions'][col]
+                        pred_val   = matched_pred['predictions'][col]
                         if abs(actual_val) > 1e-6:
                             error_pct = abs(pred_val - actual_val) / abs(actual_val) * 100
                         else:
@@ -253,12 +217,9 @@ class AgingInferenceEngine:
         key = f"AGING_{col}"
         if key not in self.current_anomaly_intervals:
             self.current_anomaly_intervals[key] = {
-                'type': key,
-                'column': col,
-                'start_time': timestamp,
-                'end_time': timestamp,
-                'max_error_pct': error_pct,
-                'count': 1,
+                'type': key, 'column': col,
+                'start_time': timestamp, 'end_time': timestamp,
+                'max_error_pct': error_pct, 'count': 1,
             }
         else:
             inv = self.current_anomaly_intervals[key]
@@ -268,34 +229,31 @@ class AgingInferenceEngine:
 
     def _close_anomaly_interval(self, col: str, timestamp: str):
         key = f"AGING_{col}"
-        if key in self.current_anomaly_intervals:
-            inv = self.current_anomaly_intervals[key]
-            try:
-                start = datetime.fromisoformat(inv['start_time'])
-                end = datetime.fromisoformat(inv['end_time'])
-                duration_sec = (end - start).total_seconds()
-            except:
-                duration_sec = 0
+        if key not in self.current_anomaly_intervals:
+            return
+        inv = self.current_anomaly_intervals[key]
+        try:
+            duration_sec = (
+                datetime.fromisoformat(inv['end_time']) -
+                datetime.fromisoformat(inv['start_time'])
+            ).total_seconds()
+        except Exception:
+            duration_sec = 0
 
-            self.anomaly_logs.insert(0, {
-                'type': inv['type'],
-                'column': inv['column'],
-                'start_time': inv['start_time'],
-                'end_time': inv['end_time'],
-                'duration_sec': duration_sec,
-                'max_error_pct': inv['max_error_pct'],
-                'data_points': inv['count'],
-                'closed_at': timestamp,
-                'status': 'closed',
-            })
-            if len(self.anomaly_logs) > 500:
-                self.anomaly_logs = self.anomaly_logs[:500]
-            del self.current_anomaly_intervals[key]
+        self.anomaly_logs.insert(0, {
+            'type': inv['type'], 'column': inv['column'],
+            'start_time': inv['start_time'], 'end_time': inv['end_time'],
+            'duration_sec': duration_sec, 'max_error_pct': inv['max_error_pct'],
+            'data_points': inv['count'], 'closed_at': timestamp, 'status': 'closed',
+        })
+        if len(self.anomaly_logs) > 500:
+            self.anomaly_logs = self.anomaly_logs[:500]
+        del self.current_anomaly_intervals[key]
 
     def get_chart_data(self, count: int = 200) -> Dict:
         with self.lock:
             return {
-                'columns': TARGET_COLUMNS,
+                'columns': FEATURES,
                 'actuals': self.actuals_history[-count:],
                 'predictions': self.predictions_history[-count:],
             }
@@ -305,19 +263,16 @@ class AgingInferenceEngine:
             ongoing = []
             for key, inv in self.current_anomaly_intervals.items():
                 try:
-                    start = datetime.fromisoformat(inv['start_time'])
-                    duration_sec = (datetime.now() - start).total_seconds()
-                except:
+                    duration_sec = (
+                        datetime.now() - datetime.fromisoformat(inv['start_time'])
+                    ).total_seconds()
+                except Exception:
                     duration_sec = 0
                 ongoing.append({
-                    'type': inv['type'],
-                    'column': inv['column'],
-                    'start_time': inv['start_time'],
-                    'end_time': '진행중',
-                    'duration_sec': duration_sec,
-                    'max_error_pct': inv['max_error_pct'],
-                    'data_points': inv['count'],
-                    'status': 'ongoing',
+                    'type': inv['type'], 'column': inv['column'],
+                    'start_time': inv['start_time'], 'end_time': '진행중',
+                    'duration_sec': duration_sec, 'max_error_pct': inv['max_error_pct'],
+                    'data_points': inv['count'], 'status': 'ongoing',
                 })
             closed = self.anomaly_logs[:limit - len(ongoing)]
             return ongoing + closed
@@ -331,7 +286,7 @@ class AgingInferenceEngine:
             'predictions_count': len(self.predictions_history),
             'anomaly_logs_count': len(self.anomaly_logs),
             'ongoing_anomalies': len(self.current_anomaly_intervals),
-            'target_columns': TARGET_COLUMNS,
+            'target_columns': FEATURES,
         }
 
     def reset(self):

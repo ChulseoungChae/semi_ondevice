@@ -198,28 +198,28 @@
                         <div style="height: 200px;"><canvas id="agingChart_Ar.MFC.i"></canvas></div>
                     </div>
                     <div class="card">
-                        <div class="chart-header"><div class="chart-title">Ion.Gauge.i - 5초 후 예측</div></div>
-                        <div style="height: 200px;"><canvas id="agingChart_Ion.Gauge.i"></canvas></div>
-                    </div>
-                    <div class="card">
                         <div class="chart-header"><div class="chart-title">Baratron.Gauge.i - 5초 후 예측</div></div>
                         <div style="height: 200px;"><canvas id="agingChart_Baratron.Gauge.i"></canvas></div>
-                    </div>
-                    <div class="card">
-                        <div class="chart-header"><div class="chart-title">OES.Data6 - 5초 후 예측</div></div>
-                        <div style="height: 200px;"><canvas id="agingChart_OES.Data6"></canvas></div>
                     </div>
                     <div class="card">
                         <div class="chart-header"><div class="chart-title">PLA5.Match.DCBias - 5초 후 예측</div></div>
                         <div style="height: 200px;"><canvas id="agingChart_PLA5.Match.DCBias"></canvas></div>
                     </div>
                     <div class="card">
-                        <div class="chart-header"><div class="chart-title">SBRF5.Forward - 5초 후 예측</div></div>
-                        <div style="height: 200px;"><canvas id="agingChart_SBRF5.Forward"></canvas></div>
+                        <div class="chart-header"><div class="chart-title">EN4.Power - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_EN4.Power"></canvas></div>
                     </div>
                     <div class="card">
-                        <div class="chart-header"><div class="chart-title">SBRF5.Reflect - 5초 후 예측</div></div>
-                        <div style="height: 200px;"><canvas id="agingChart_SBRF5.Reflect"></canvas></div>
+                        <div class="chart-header"><div class="chart-title">SBRF5.SetPower - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_SBRF5.SetPower"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">PWPDS.Data - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_PWPDS.Data"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">Ion.Gauge.i - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_Ion.Gauge.i"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -346,7 +346,7 @@
         // Chart data buffers
         const cnnData = { labels: [], actual: [], predicted: [] };
         const sensorData = {};
-        const AGING_TARGET_COLUMNS = ['Ar.MFC.i', 'Ion.Gauge.i', 'Baratron.Gauge.i', 'OES.Data6', 'PLA5.Match.DCBias', 'SBRF5.Forward', 'SBRF5.Reflect'];
+        const AGING_TARGET_COLUMNS = ['Ar.MFC.i', 'Baratron.Gauge.i', 'PLA5.Match.DCBias', 'EN4.Power', 'SBRF5.SetPower', 'PWPDS.Data', 'Ion.Gauge.i'];
         const SENSOR_KEYS = ['Ar.MFC.i', 'EN4.Power', 'SBRF5.SetPower', 'PLA5.Match.DCBias', 'PLA5.Match.Tune.Posi', 'ULVAC.Stage1.Temp1', 'EN4.Volt', 'Ion.Gauge.i'];
         const SENSOR_CHART_MAP = {
             'Ar.MFC.i': 'ar', 'EN4.Power': 'en4', 'SBRF5.SetPower': 'sbrf',
@@ -457,8 +457,8 @@
         // ===== Initialize Aging Charts (7 columns, actual + predicted) =====
         function initializeAgingCharts() {
             const agingColors = {
-                'Ar.MFC.i': '#ffd93d', 'Ion.Gauge.i': '#c084fc', 'Baratron.Gauge.i': '#34d399',
-                'OES.Data6': '#60a5fa', 'PLA5.Match.DCBias': '#f97316', 'SBRF5.Forward': '#ff6b6b', 'SBRF5.Reflect': '#a78bfa'
+                'Ar.MFC.i': '#ffd93d', 'Baratron.Gauge.i': '#34d399', 'PLA5.Match.DCBias': '#f97316',
+                'EN4.Power': '#ff6b6b', 'SBRF5.SetPower': '#a78bfa', 'PWPDS.Data': '#60a5fa', 'Ion.Gauge.i': '#c084fc'
             };
             AGING_TARGET_COLUMNS.forEach(col => {
                 const canvasId = `agingChart_${col}`;

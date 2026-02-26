@@ -712,5 +712,383 @@
       "deviation_percent": -99.33333333333333
     },
     "created_at": "2026-02-21T02:24:28.234819"
+  },
+  {
+    "id": 52,
+    "process_id": "20260221_022250",
+    "timestamp": "[2026.02.21 02:24:24]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -94.67% 감소",
+    "related_values": {
+      "Ar.MFC.i": 8.0,
+      "baseline": 150.0,
+      "deviation_percent": -94.66666666666667
+    },
+    "created_at": "2026-02-27T03:00:17.172921"
+  },
+  {
+    "id": 53,
+    "process_id": "20260221_022250",
+    "timestamp": "[2026.02.21 02:24:25]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -96.67% 감소",
+    "related_values": {
+      "Ar.MFC.i": 5.0,
+      "baseline": 150.0,
+      "deviation_percent": -96.66666666666667
+    },
+    "created_at": "2026-02-27T03:00:17.175154"
+  },
+  {
+    "id": 54,
+    "process_id": "20260221_022250",
+    "timestamp": "[2026.02.21 02:24:26]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -98.67% 감소",
+    "related_values": {
+      "Ar.MFC.i": 2.0,
+      "baseline": 150.0,
+      "deviation_percent": -98.66666666666667
+    },
+    "created_at": "2026-02-27T03:00:17.177361"
+  },
+  {
+    "id": 55,
+    "process_id": "20260221_022250",
+    "timestamp": "[2026.02.21 02:24:27]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -99.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 1.0,
+      "baseline": 150.0,
+      "deviation_percent": -99.33333333333333
+    },
+    "created_at": "2026-02-27T03:00:17.179605"
+  },
+  {
+    "id": 56,
+    "process_id": "20260220_234059",
+    "timestamp": "[2026.02.20 23:42:28]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(80.0) 대비 -91.25% 감소",
+    "related_values": {
+      "Ar.MFC.i": 7.0,
+      "baseline": 80.0,
+      "deviation_percent": -91.25
+    },
+    "created_at": "2026-02-27T03:00:20.626928"
+  },
+  {
+    "id": 57,
+    "process_id": "20260220_234059",
+    "timestamp": "[2026.02.20 23:42:29]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(80.0) 대비 -96.25% 감소",
+    "related_values": {
+      "Ar.MFC.i": 3.0,
+      "baseline": 80.0,
+      "deviation_percent": -96.25
+    },
+    "created_at": "2026-02-27T03:00:20.629184"
+  },
+  {
+    "id": 58,
+    "process_id": "20260220_234059",
+    "timestamp": "[2026.02.20 23:42:30]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(80.0) 대비 -98.75% 감소",
+    "related_values": {
+      "Ar.MFC.i": 1.0,
+      "baseline": 80.0,
+      "deviation_percent": -98.75
+    },
+    "created_at": "2026-02-27T03:00:20.631440"
+  },
+  {
+    "id": 59,
+    "process_id": "20260220_180237",
+    "timestamp": "[2026.02.20 18:04:12]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -93.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 10.0,
+      "baseline": 150.0,
+      "deviation_percent": -93.33333333333333
+    },
+    "created_at": "2026-02-27T03:00:21.859687"
+  },
+  {
+    "id": 60,
+    "process_id": "20260220_180237",
+    "timestamp": "[2026.02.20 18:04:13]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -96.00% 감소",
+    "related_values": {
+      "Ar.MFC.i": 6.0,
+      "baseline": 150.0,
+      "deviation_percent": -96.0
+    },
+    "created_at": "2026-02-27T03:00:21.861911"
+  },
+  {
+    "id": 61,
+    "process_id": "20260220_180237",
+    "timestamp": "[2026.02.20 18:04:14]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -98.00% 감소",
+    "related_values": {
+      "Ar.MFC.i": 3.0,
+      "baseline": 150.0,
+      "deviation_percent": -98.0
+    },
+    "created_at": "2026-02-27T03:00:21.864165"
+  },
+  {
+    "id": 62,
+    "process_id": "20260220_180237",
+    "timestamp": "[2026.02.20 18:04:15]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -99.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 1.0,
+      "baseline": 150.0,
+      "deviation_percent": -99.33333333333333
+    },
+    "created_at": "2026-02-27T03:00:21.866414"
+  },
+  {
+    "id": 63,
+    "process_id": "20260219_103308",
+    "timestamp": "[2026.02.19 10:34:43]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -93.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 10.0,
+      "baseline": 150.0,
+      "deviation_percent": -93.33333333333333
+    },
+    "created_at": "2026-02-27T03:00:25.287840"
+  },
+  {
+    "id": 64,
+    "process_id": "20260219_103308",
+    "timestamp": "[2026.02.19 10:34:44]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -96.00% 감소",
+    "related_values": {
+      "Ar.MFC.i": 6.0,
+      "baseline": 150.0,
+      "deviation_percent": -96.0
+    },
+    "created_at": "2026-02-27T03:00:25.290075"
+  },
+  {
+    "id": 65,
+    "process_id": "20260219_103308",
+    "timestamp": "[2026.02.19 10:34:45]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -98.00% 감소",
+    "related_values": {
+      "Ar.MFC.i": 3.0,
+      "baseline": 150.0,
+      "deviation_percent": -98.0
+    },
+    "created_at": "2026-02-27T03:00:25.292327"
+  },
+  {
+    "id": 66,
+    "process_id": "20260219_103308",
+    "timestamp": "[2026.02.19 10:34:46]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -99.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 1.0,
+      "baseline": 150.0,
+      "deviation_percent": -99.33333333333333
+    },
+    "created_at": "2026-02-27T03:00:25.294563"
+  },
+  {
+    "id": 67,
+    "process_id": "20260213_122406",
+    "timestamp": "[2026.02.13 12:25:40]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -94.00% 감소",
+    "related_values": {
+      "Ar.MFC.i": 9.0,
+      "baseline": 150.0,
+      "deviation_percent": -94.0
+    },
+    "created_at": "2026-02-27T03:00:26.484715"
+  },
+  {
+    "id": 68,
+    "process_id": "20260213_122406",
+    "timestamp": "[2026.02.13 12:25:41]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -96.67% 감소",
+    "related_values": {
+      "Ar.MFC.i": 5.0,
+      "baseline": 150.0,
+      "deviation_percent": -96.66666666666667
+    },
+    "created_at": "2026-02-27T03:00:26.487013"
+  },
+  {
+    "id": 69,
+    "process_id": "20260213_122406",
+    "timestamp": "[2026.02.13 12:25:42]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -98.00% 감소",
+    "related_values": {
+      "Ar.MFC.i": 3.0,
+      "baseline": 150.0,
+      "deviation_percent": -98.0
+    },
+    "created_at": "2026-02-27T03:00:26.489338"
+  },
+  {
+    "id": 70,
+    "process_id": "20260213_122406",
+    "timestamp": "[2026.02.13 12:25:43]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -99.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 1.0,
+      "baseline": 150.0,
+      "deviation_percent": -99.33333333333333
+    },
+    "created_at": "2026-02-27T03:00:26.491583"
+  },
+  {
+    "id": 71,
+    "process_id": "20260213_122058",
+    "timestamp": "[2026.02.13 12:22:31]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -37.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 94.0,
+      "baseline": 150.0,
+      "deviation_percent": -37.333333333333336
+    },
+    "created_at": "2026-02-27T03:00:27.726149"
+  },
+  {
+    "id": 72,
+    "process_id": "20260213_122058",
+    "timestamp": "[2026.02.13 12:22:32]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -94.67% 감소",
+    "related_values": {
+      "Ar.MFC.i": 8.0,
+      "baseline": 150.0,
+      "deviation_percent": -94.66666666666667
+    },
+    "created_at": "2026-02-27T03:00:27.728471"
+  },
+  {
+    "id": 73,
+    "process_id": "20260213_122058",
+    "timestamp": "[2026.02.13 12:22:33]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -97.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 4.0,
+      "baseline": 150.0,
+      "deviation_percent": -97.33333333333334
+    },
+    "created_at": "2026-02-27T03:00:27.730994"
+  },
+  {
+    "id": 74,
+    "process_id": "20260213_122058",
+    "timestamp": "[2026.02.13 12:22:34]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -98.67% 감소",
+    "related_values": {
+      "Ar.MFC.i": 2.0,
+      "baseline": 150.0,
+      "deviation_percent": -98.66666666666667
+    },
+    "created_at": "2026-02-27T03:00:27.733351"
+  },
+  {
+    "id": 75,
+    "process_id": "20260227_062608",
+    "timestamp": "[2026.02.27 06:27:41]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -93.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 10.0,
+      "baseline": 150.0,
+      "deviation_percent": -93.33333333333333
+    },
+    "created_at": "2026-02-27T06:27:41.815376"
+  },
+  {
+    "id": 76,
+    "process_id": "20260227_062608",
+    "timestamp": "[2026.02.27 06:27:42]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -96.00% 감소",
+    "related_values": {
+      "Ar.MFC.i": 6.0,
+      "baseline": 150.0,
+      "deviation_percent": -96.0
+    },
+    "created_at": "2026-02-27T06:27:42.825682"
+  },
+  {
+    "id": 77,
+    "process_id": "20260227_062608",
+    "timestamp": "[2026.02.27 06:27:43]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -98.00% 감소",
+    "related_values": {
+      "Ar.MFC.i": 3.0,
+      "baseline": 150.0,
+      "deviation_percent": -98.0
+    },
+    "created_at": "2026-02-27T06:27:43.835524"
+  },
+  {
+    "id": 78,
+    "process_id": "20260227_062608",
+    "timestamp": "[2026.02.27 06:27:44]",
+    "anomaly_type": "GAS_FLOW_ANOMALY",
+    "severity": "critical",
+    "description": "가스 부족: Ar.MFC.i가 기준값(150.0) 대비 -99.33% 감소",
+    "related_values": {
+      "Ar.MFC.i": 1.0,
+      "baseline": 150.0,
+      "deviation_percent": -99.33333333333333
+    },
+    "created_at": "2026-02-27T06:27:44.845298"
   }
 ]
