@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVD 종합 모니터링 플랫폼</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a2e; color: #eee; padding: 15px; max-width: 70%; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px 20px; background: linear-gradient(135deg, #16213e 0%, #0f3460 100%); border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .header h1 { font-size: 1.8em; color: #00d9ff; }
+        .header-controls { display: flex; gap: 15px; align-items: center; }
+        .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 0.85em; }
+        .status-badge.running { background-color: #28a745; color: white; }
+        .status-badge.stopped { background-color: #6c757d; color: white; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 0.95em; font-weight: bold; cursor: pointer; transition: all 0.3s ease; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .btn-primary { background-color: #00d9ff; color: #1a1a2e; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-small { padding: 6px 14px; font-size: 0.85em; }
+        .btn-info { background-color: #17a2b8; color: white; }
+        .btn-warning { background-color: #ffc107; color: #1a1a2e; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #00d9ff; flex-wrap: wrap; }
+        .tab { padding: 10px 18px; background-color: #16213e; border: none; color: #eee; cursor: pointer; border-radius: 8px 8px 0 0; font-size: 0.9em; transition: all 0.3s ease; }
+        .tab:hover { background-color: #0f3460; }
+        .tab.active { background-color: #00d9ff; color: #1a1a2e; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background-color: #16213e; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card h2 { color: #00d9ff; margin-bottom: 10px; font-size: 1.3em; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 8px 10px; background-color: #0f3460; border-radius: 5px; }
+        .chart-title { font-size: 1.1em; font-weight: bold; color: #00d9ff; }
+        .recipe-info { font-size: 0.85em; color: #ffd700; }
+
+        /* 2열 그리드 */
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .charts-grid .chart-container { min-width: 0; }
+
+        /* 실시간 모니터링: 메인 영역 + 사이드 로그 패널 */
+        .monitoring-layout { display: grid; grid-template-columns: 1fr 350px; gap: 15px; }
+        .monitoring-main { min-width: 0; }
+        .log-panel { background-color: #16213e; border-radius: 10px; padding: 15px; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .log-panel h3 { color: #00d9ff; margin-bottom: 10px; font-size: 1.1em; }
+        .log-entry { padding: 10px; margin-bottom: 8px; border-radius: 6px; font-size: 0.85em; border-left: 4px solid; }
+        .log-entry.warning { background-color: rgba(255,165,0,0.15); border-color: #ff9800; }
+        .log-entry.critical { background-color: rgba(255,107,107,0.15); border-color: #ff6b6b; }
+        .log-entry .log-time { color: #aaa; font-size: 0.8em; }
+        .log-entry .log-type { font-weight: bold; margin: 3px 0; }
+        .log-entry .log-cause { color: #ffd93d; font-size: 0.8em; margin-top: 3px; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); }
+        .modal-content { background-color: #16213e; margin: 15% auto; padding: 30px; border: 2px solid #00d9ff; border-radius: 10px; width: 400px; }
+        .modal-header { font-size: 1.4em; color: #00d9ff; margin-bottom: 20px; text-align: center; }
+        .modal-footer { display: flex; justify-content: space-around; gap: 10px; }
+        .mode-btn { flex: 1; padding: 15px; border: 2px solid #00d9ff; background-color: #0f3460; color: #eee; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.3s ease; }
+        .mode-btn:hover { background-color: #00d9ff; color: #1a1a2e; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: #00d9ff; }
+
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 15px; }
+        .summary-card { background-color: #0f3460; padding: 15px; border-radius: 8px; text-align: center; }
+        .summary-card h3 { color: #00d9ff; font-size: 0.85em; margin-bottom: 8px; }
+        .summary-card .value { font-size: 1.8em; font-weight: bold; }
+        .anomaly-high { color: #ff6b6b; font-weight: bold; }
+        .anomaly-medium { color: #ffd93d; font-weight: bold; }
+
+        .log-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        .log-table th { background-color: #0f3460; color: #00d9ff; padding: 10px; text-align: left; border-bottom: 2px solid #00d9ff; }
+        .log-table td { padding: 8px 10px; border-bottom: 1px solid #0f3460; }
+        .log-table tr:hover { background-color: #0f3460; }
+
+        .filter-section { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-group label { color: #00d9ff; font-size: 0.85em; }
+        .filter-group input, .filter-group select { padding: 7px; border: 1px solid #00d9ff; border-radius: 5px; background-color: #0f3460; color: #eee; font-size: 0.85em; }
+
+        .interval-item { background-color: #0f3460; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid; cursor: pointer; }
+        .interval-item.warning { border-color: #ff9800; }
+        .interval-item.critical { border-color: #ff6b6b; }
+        .interval-item .interval-header { display: flex; justify-content: space-between; align-items: center; }
+        .interval-item .interval-detail { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #16213e; font-size: 0.85em; }
+        .interval-item.expanded .interval-detail { display: block; }
+
+        .process-item { background-color: #0f3460; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .process-info { flex: 1; }
+        .process-actions { display: flex; gap: 8px; }
+
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+        .metric-item { background-color: #0f3460; padding: 12px; border-radius: 5px; }
+        .metric-item .label { color: #00d9ff; font-size: 0.8em; margin-bottom: 4px; }
+        .metric-item .value { font-size: 1.2em; font-weight: bold; }
+
+        .report-section { margin-bottom: 20px; }
+        .report-section h3 { color: #00d9ff; margin-bottom: 10px; border-bottom: 1px solid #0f3460; padding-bottom: 5px; }
+
+        .recommendation-item { background-color: #0f3460; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid; }
+        .recommendation-item.high { border-color: #ff6b6b; }
+        .recommendation-item.medium { border-color: #ffd93d; }
+
+        /* 장비 노후 감지 탭 레이아웃 */
+        .aging-layout { display: grid; grid-template-columns: 1fr 350px; gap: 15px; }
+        .aging-main { min-width: 0; }
+
+        @media (max-width: 1200px) {
+            .monitoring-layout, .aging-layout { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PVD 종합 모니터링 플랫폼</h1>
+        <div class="header-controls">
+            <div class="status-badge stopped" id="statusBadge">대기중</div>
+            <button class="btn btn-primary" id="runBtn">RUN</button>
+            <button class="btn btn-danger" id="stopBtn" style="display: none;">STOP</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="monitoring">실시간 모니터링</button>
+        <button class="tab" data-tab="aging">장비 노후 감지</button>
+        <button class="tab" data-tab="logs">이상 로그</button>
+        <button class="tab" data-tab="reports">분석 리포트</button>
+        <button class="tab" data-tab="history">공정 이력 검색</button>
+    </div>
+
+    <!-- ========== 실시간 모니터링 탭 ========== -->
+    <div class="tab-content active" id="monitoring">
+        <div class="monitoring-layout">
+            <div class="monitoring-main">
+                <!-- PWPDS.Data 풀 너비 -->
+                <div class="card">
+                    <div class="chart-header">
+                        <div class="chart-title">PWPDS.Data (Plasma Density) - CNN 예측</div>
+                        <div class="recipe-info" id="recipeInfo">Recipe: -</div>
+                    </div>
+                    <div style="height: 300px;"><canvas id="pwpdsChart"></canvas></div>
+                </div>
+
+                <!-- 센서 차트 2열 그리드 -->
+                <div class="charts-grid">
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">Ar.MFC.i</div></div>
+                        <div style="height: 180px;"><canvas id="arChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">EN4.Power</div></div>
+                        <div style="height: 180px;"><canvas id="en4Chart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">SBRF5.SetPower</div></div>
+                        <div style="height: 180px;"><canvas id="sbrfChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">PLA5.Match.DCBias</div></div>
+                        <div style="height: 180px;"><canvas id="dcbiasChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">PLA5.Match.Tune.Posi</div></div>
+                        <div style="height: 180px;"><canvas id="tunePosChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">ULVAC.Stage1.Temp1</div></div>
+                        <div style="height: 180px;"><canvas id="tempChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">EN4.Volt</div></div>
+                        <div style="height: 180px;"><canvas id="voltChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">Ion.Gauge.i</div></div>
+                        <div style="height: 180px;"><canvas id="ionChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 실시간 이상 로그 패널 -->
+            <div class="log-panel" id="realtimeLogPanel">
+                <h3>실시간 이상 감지</h3>
+                <div id="realtimeLogEntries">
+                    <p style="color: #aaa; text-align: center; padding: 20px;">이상 감지 대기 중...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 장비 노후 감지 탭 ========== -->
+    <div class="tab-content" id="aging">
+        <div class="aging-layout">
+            <div class="aging-main">
+                <div class="charts-grid">
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">Ar.MFC.i - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_Ar.MFC.i"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">Ion.Gauge.i - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_Ion.Gauge.i"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">Baratron.Gauge.i - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_Baratron.Gauge.i"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">OES.Data6 - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_OES.Data6"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">PLA5.Match.DCBias - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_PLA5.Match.DCBias"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">SBRF5.Forward - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_SBRF5.Forward"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header"><div class="chart-title">SBRF5.Reflect - 5초 후 예측</div></div>
+                        <div style="height: 200px;"><canvas id="agingChart_SBRF5.Reflect"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <!-- 장비 노후 이상 로그 -->
+            <div class="log-panel" id="agingLogPanel">
+                <h3>장비 노후 이상 로그</h3>
+                <div id="agingLogEntries">
+                    <p style="color: #aaa; text-align: center; padding: 20px;">이상 감지 대기 중...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 이상 로그 탭 ========== -->
+    <div class="tab-content" id="logs">
+        <div class="card">
+            <h2>이상 로그 요약</h2>
+            <div class="summary-grid">
+                <div class="summary-card"><h3>총 이상 구간</h3><div class="value" id="totalIntervals">0</div></div>
+                <div class="summary-card"><h3>AR_FLUCTUATION</h3><div class="value anomaly-medium" id="arFluctCount">0</div></div>
+                <div class="summary-card"><h3>PWPDS 예측 이상</h3><div class="value anomaly-high" id="pwpdsPredCount">0</div></div>
+                <div class="summary-card"><h3>마그넷 오염</h3><div class="value anomaly-high" id="magnetCount">0</div></div>
+                <div class="summary-card"><h3>가스 유량 이상</h3><div class="value anomaly-medium" id="gasFlowCount">0</div></div>
+                <div class="summary-card"><h3>경고</h3><div class="value" style="color: #ff9800;" id="warningCount">0</div></div>
+                <div class="summary-card"><h3>심각</h3><div class="value anomaly-high" id="criticalCount">0</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <h2>이상 구간 목록</h2>
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label>이상 유형</label>
+                    <select id="logTypeFilter">
+                        <option value="">전체</option>
+                        <option value="AR_FLUCTUATION">Ar 유량 진동</option>
+                        <option value="PWPDS_PREDICTION_ANOMALY">PWPDS 예측 이상</option>
+                        <option value="MAGNET_CONTAMINATION">마그넷 오염</option>
+                        <option value="GAS_FLOW_ANOMALY">가스 유량 이상</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>심각도</label>
+                    <select id="logSeverityFilter">
+                        <option value="">전체</option>
+                        <option value="warning">경고</option>
+                        <option value="critical">심각</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-primary btn-small" onclick="loadIntervals()">조회</button>
+                </div>
+            </div>
+            <div id="intervalsList"></div>
+        </div>
+    </div>
+
+    <!-- ========== 분석 리포트 탭 ========== -->
+    <div class="tab-content" id="reports">
+        <div class="card">
+            <h2>공정 선택</h2>
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label>공정 선택</label>
+                    <select id="reportProcessSelect" style="min-width: 300px;">
+                        <option value="">공정을 선택하세요</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-primary btn-small" onclick="loadReport()">리포트 생성</button>
+                </div>
+            </div>
+        </div>
+        <div id="reportContent" style="display: none;"></div>
+    </div>
+
+    <!-- ========== 공정 이력 검색 탭 ========== -->
+    <div class="tab-content" id="history">
+        <div class="card">
+            <h2>공정 이력 검색</h2>
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label>공정 ID</label>
+                    <select id="historyProcessSelect" style="min-width: 300px;">
+                        <option value="">공정을 선택하세요</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-primary btn-small" onclick="loadProcessHistory()">조회</button>
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-info btn-small" onclick="loadExports()">CSV Export 목록</button>
+                </div>
+            </div>
+        </div>
+        <div id="historyChartArea" style="display: none;"></div>
+        <div id="exportsList" style="display: none;"></div>
+        <div id="historyResults"></div>
+    </div>
+
+    <!-- Mode Selection Modal -->
+    <div id="modeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModeModal()">&times;</span>
+            <div class="modal-header">모드 선택</div>
+            <div style="text-align: center; margin-bottom: 20px;">실행 모드를 선택하세요</div>
+            <div class="modal-footer">
+                <button class="mode-btn" onclick="startGenerator('normal')">정상 모드</button>
+                <button class="mode-btn" onclick="startGenerator('abnormal')">비정상 모드</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== Global State =====
+        let wsInference = null;
+        let wsStatus = null;
+        let wsAging = null;
+        let charts = {};
+        let agingCharts = {};
+        let isRunning = false;
+        let columnRanges = {};
+        const MAX_POINTS = 200;
+
+        // Chart data buffers
+        const cnnData = { labels: [], actual: [], predicted: [] };
+        const sensorData = {};
+        const AGING_TARGET_COLUMNS = ['Ar.MFC.i', 'Ion.Gauge.i', 'Baratron.Gauge.i', 'OES.Data6', 'PLA5.Match.DCBias', 'SBRF5.Forward', 'SBRF5.Reflect'];
+        const SENSOR_KEYS = ['Ar.MFC.i', 'EN4.Power', 'SBRF5.SetPower', 'PLA5.Match.DCBias', 'PLA5.Match.Tune.Posi', 'ULVAC.Stage1.Temp1', 'EN4.Volt', 'Ion.Gauge.i'];
+        const SENSOR_CHART_MAP = {
+            'Ar.MFC.i': 'ar', 'EN4.Power': 'en4', 'SBRF5.SetPower': 'sbrf',
+            'PLA5.Match.DCBias': 'dcbias', 'PLA5.Match.Tune.Posi': 'tunePos',
+            'ULVAC.Stage1.Temp1': 'temp', 'EN4.Volt': 'volt', 'Ion.Gauge.i': 'ion'
+        };
+        const SENSOR_COLORS = {
+            'ar': '#ffd93d', 'en4': '#ff6b6b', 'sbrf': '#a78bfa', 'dcbias': '#f97316',
+            'tunePos': '#34d399', 'temp': '#fb923c', 'volt': '#60a5fa', 'ion': '#c084fc'
+        };
+        SENSOR_KEYS.forEach(k => {
+            const ck = SENSOR_CHART_MAP[k];
+            sensorData[ck] = { labels: [], values: [] };
+        });
+
+        // ===== Init =====
+        document.addEventListener('DOMContentLoaded', async function() {
+            initializeTabs();
+            await loadColumnRanges();
+            initializeCharts();
+            initializeAgingCharts();
+            checkGeneratorStatus();
+            loadIntervals();
+            loadProcessesForSelect();
+        });
+
+        // ===== Column Ranges =====
+        async function loadColumnRanges() {
+            try {
+                const resp = await fetch('/api/column-ranges');
+                columnRanges = await resp.json();
+            } catch(e) { console.error('Failed to load column ranges:', e); }
+        }
+
+        function getRange(colName) {
+            const r = columnRanges[colName];
+            if (r) return { min: r.min, max: r.max };
+            return undefined;
+        }
+
+        // ===== Tabs =====
+        function initializeTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const target = this.getAttribute('data-tab');
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(target).classList.add('active');
+                });
+            });
+        }
+
+        // ===== Chart Helpers =====
+        function makeChartOpts(range, showLegend) {
+            const opts = {
+                responsive: true, maintainAspectRatio: false, animation: false,
+                plugins: { legend: { display: !!showLegend, labels: { color: '#eee', font: { size: 11 } } } },
+                scales: {
+                    x: { ticks: { color: '#aaa', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    y: { ticks: { color: '#aaa', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.08)' } }
+                }
+            };
+            if (range) {
+                opts.scales.y.min = range.min;
+                opts.scales.y.max = range.max;
+            }
+            return opts;
+        }
+
+        function createSensorChart(canvasId, label, color, range) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: label, data: [], borderColor: color, borderWidth: 1.5, pointRadius: 0, tension: 0.3 }] },
+                options: makeChartOpts(range, false)
+            });
+        }
+
+        // ===== Initialize Real-time Charts =====
+        function initializeCharts() {
+            // PWPDS main chart (actual + predicted + bounds)
+            const pwpdsCtx = document.getElementById('pwpdsChart').getContext('2d');
+            const pwpdsRange = getRange('PWPDS.Data');
+            const pwpdsOpts = makeChartOpts(pwpdsRange, true);
+            pwpdsOpts.plugins.annotation = { annotations: {} };
+            charts.pwpds = new Chart(pwpdsCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [
+                    { label: '실제값', data: [], borderColor: '#00d9ff', borderWidth: 2, pointRadius: 0, tension: 0.3 },
+                    { label: 'CNN 예측값', data: [], borderColor: '#6bcf7f', borderWidth: 2, borderDash: [5,5], pointRadius: 0, tension: 0.3 }
+                ]},
+                options: pwpdsOpts
+            });
+
+            // Sensor charts
+            const sensorConfigs = [
+                ['arChart', 'Ar.MFC.i', 'ar'], ['en4Chart', 'EN4.Power', 'en4'],
+                ['sbrfChart', 'SBRF5.SetPower', 'sbrf'], ['dcbiasChart', 'PLA5.Match.DCBias', 'dcbias'],
+                ['tunePosChart', 'PLA5.Match.Tune.Posi', 'tunePos'], ['tempChart', 'ULVAC.Stage1.Temp1', 'temp'],
+                ['voltChart', 'EN4.Volt', 'volt'], ['ionChart', 'Ion.Gauge.i', 'ion']
+            ];
+            sensorConfigs.forEach(([canvasId, colName, key]) => {
+                charts[key] = createSensorChart(canvasId, colName, SENSOR_COLORS[key], getRange(colName));
+            });
+        }
+
+        // ===== Initialize Aging Charts (7 columns, actual + predicted) =====
+        function initializeAgingCharts() {
+            const agingColors = {
+                'Ar.MFC.i': '#ffd93d', 'Ion.Gauge.i': '#c084fc', 'Baratron.Gauge.i': '#34d399',
+                'OES.Data6': '#60a5fa', 'PLA5.Match.DCBias': '#f97316', 'SBRF5.Forward': '#ff6b6b', 'SBRF5.Reflect': '#a78bfa'
+            };
+            AGING_TARGET_COLUMNS.forEach(col => {
+                const canvasId = `agingChart_${col}`;
+                const el = document.getElementById(canvasId);
+                if (!el) return;
+                const ctx = el.getContext('2d');
+                agingCharts[col] = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [
+                        { label: '실제값', data: [], borderColor: '#00d9ff', borderWidth: 1.5, pointRadius: 0, tension: 0.3 },
+                        { label: '5초 후 예측', data: [], borderColor: '#ff9800', borderWidth: 1.5, borderDash: [5,5], pointRadius: 0, tension: 0.3 }
+                    ]},
+                    options: makeChartOpts(getRange(col), true)
+                });
+            });
+        }
+
+        // ===== Generator Control =====
+        function openModeModal() { document.getElementById('modeModal').style.display = 'block'; }
+        function closeModeModal() { document.getElementById('modeModal').style.display = 'none'; }
+        document.getElementById('runBtn').addEventListener('click', openModeModal);
+        document.getElementById('stopBtn').addEventListener('click', stopGenerator);
+
+        async function startGenerator(mode) {
+            closeModeModal();
+            try {
+                const resp = await fetch(`/api/generator/start?mode=${mode}`, { method: 'POST' });
+                if (resp.ok) {
+                    isRunning = true;
+                    updateRunUI(true);
+                    connectWebSockets();
+                }
+            } catch(e) { console.error('Start error:', e); }
+        }
+
+        async function stopGenerator() {
+            try {
+                const resp = await fetch('/api/generator/stop', { method: 'POST' });
+                if (resp.ok) {
+                    isRunning = false;
+                    updateRunUI(false);
+                    disconnectWebSockets();
+                }
+            } catch(e) { console.error('Stop error:', e); }
+        }
+
+        async function checkGeneratorStatus() {
+            try {
+                const resp = await fetch('/api/generator/status');
+                const st = await resp.json();
+                isRunning = st.running;
+                updateRunUI(isRunning);
+                if (isRunning) connectWebSockets();
+            } catch(e) { console.error('Status check error:', e); }
+        }
+
+        function updateRunUI(running) {
+            document.getElementById('runBtn').style.display = running ? 'none' : 'block';
+            document.getElementById('stopBtn').style.display = running ? 'block' : 'none';
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = running ? '모니터링 중' : '대기중';
+            badge.className = 'status-badge ' + (running ? 'running' : 'stopped');
+        }
+
+        // ===== WebSocket Connections =====
+        function connectWebSockets() {
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = location.host;
+
+            // Status WS
+            wsStatus = new WebSocket(`${proto}//${host}/ws`);
+            wsStatus.onmessage = e => handleStatusData(JSON.parse(e.data));
+            wsStatus.onclose = () => { if (isRunning) setTimeout(() => { if (isRunning) connectWebSockets(); }, 3000); };
+
+            // CNN Inference WS
+            wsInference = new WebSocket(`${proto}//${host}/ws/inference`);
+            wsInference.onmessage = e => handleCNNData(JSON.parse(e.data));
+
+            // Aging (LSTM) WS
+            wsAging = new WebSocket(`${proto}//${host}/ws/aging`);
+            wsAging.onmessage = e => handleAgingData(JSON.parse(e.data));
+        }
+
+        function disconnectWebSockets() {
+            [wsInference, wsStatus, wsAging].forEach(ws => { if (ws) ws.close(); });
+            wsInference = wsStatus = wsAging = null;
+        }
+
+        // ===== Handle Status Data =====
+        function handleStatusData(data) {
+            if (data.type === 'update' && data.data && data.data.length > 0) {
+                // Update sensor charts from status WS data (latest point)
+                const latest = data.data[data.data.length - 1];
+                const ts = new Date().toLocaleTimeString();
+
+                SENSOR_KEYS.forEach(col => {
+                    const key = SENSOR_CHART_MAP[col];
+                    const val = latest[col];
+                    if (val !== undefined && val !== null) {
+                        pushSensorData(sensorData[key], charts[key], ts, parseFloat(val));
+                    }
+                });
+            }
+        }
+
+        function pushSensorData(buf, chart, label, value) {
+            buf.labels.push(label);
+            buf.values.push(value);
+            if (buf.labels.length > MAX_POINTS) { buf.labels.shift(); buf.values.shift(); }
+            chart.data.labels = buf.labels;
+            chart.data.datasets[0].data = buf.values;
+            chart.update('none');
+        }
+
+        // ===== Handle CNN Inference Data =====
+        function handleCNNData(data) {
+            if (data.type !== 'cnn_update') return;
+
+            const cd = data.chart_data;
+            if (cd && cd.actuals && cd.actuals.length > 0) {
+                // Rebuild chart from full history
+                const actuals = cd.actuals;
+                const preds = cd.predictions;
+                const labels = actuals.map((a, i) => i.toString());
+
+                cnnData.labels = labels;
+                cnnData.actual = actuals.map(a => a.actual);
+                cnnData.predicted = preds.map(p => p.predicted);
+
+                charts.pwpds.data.labels = cnnData.labels;
+                charts.pwpds.data.datasets[0].data = cnnData.actual;
+                charts.pwpds.data.datasets[1].data = cnnData.predicted;
+
+                // Bounds annotation
+                const annotations = {};
+                const bounds = cd.bounds;
+                if (bounds && bounds.lower !== undefined) {
+                    annotations.lowerBound = {
+                        type: 'line', yMin: bounds.lower, yMax: bounds.lower,
+                        borderColor: 'rgba(255,107,107,0.7)', borderWidth: 1.5, borderDash: [5,5]
+                    };
+                    annotations.upperBound = {
+                        type: 'line', yMin: bounds.upper, yMax: bounds.upper,
+                        borderColor: 'rgba(255,107,107,0.7)', borderWidth: 1.5, borderDash: [5,5]
+                    };
+                }
+
+                // Ar fluctuation highlights
+                if (data.ar_intervals) {
+                    data.ar_intervals.forEach((inv, i) => {
+                        const arKey = SENSOR_CHART_MAP['Ar.MFC.i'];
+                        // Highlight in Ar chart (we mark the data index range)
+                        // Note: This is visual only via chart annotation on the PWPDS chart
+                    });
+                }
+
+                charts.pwpds.options.plugins.annotation.annotations = annotations;
+
+                // Recipe info
+                if (cd.recipe) {
+                    document.getElementById('recipeInfo').textContent = `Recipe: ${cd.recipe.recipe_key || '-'}`;
+                }
+
+                charts.pwpds.update('none');
+            }
+
+            // Realtime anomaly log panel
+            if (data.anomaly_logs) {
+                updateRealtimeLogPanel(data.anomaly_logs);
+            }
+        }
+
+        function updateRealtimeLogPanel(logs) {
+            const container = document.getElementById('realtimeLogEntries');
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">이상 감지 없음</p>';
+                return;
+            }
+            container.innerHTML = logs.slice(0, 30).map(log => {
+                const severity = log.severity || (log.status === 'ongoing' ? 'warning' : 'critical');
+                const cause = log.cause_info ? log.cause_info.cause : '';
+                const detail = log.cause_info ? log.cause_info.detail : '';
+                const statusText = log.status === 'ongoing' ? '진행중' : `${log.duration_sec?.toFixed(0) || 0}초`;
+                return `<div class="log-entry ${severity}">
+                    <div class="log-time">${log.start_time || ''} (${statusText})</div>
+                    <div class="log-type">${log.type} - 오차: ${log.max_error_pct?.toFixed(2) || 0}%</div>
+                    ${cause ? `<div class="log-cause">${cause}</div>` : ''}
+                    ${detail ? `<div class="log-cause" style="color: #aaa;">${detail}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        // ===== Handle Aging (Extended LSTM) Data =====
+        function handleAgingData(data) {
+            if (data.type !== 'aging_update') return;
+
+            const cd = data.chart_data;
+            if (cd && cd.actuals && cd.actuals.length > 0) {
+                const actuals = cd.actuals;
+                const preds = cd.predictions;
+                const labels = actuals.map((a, i) => i.toString());
+                const columns = cd.columns || AGING_TARGET_COLUMNS;
+
+                columns.forEach(col => {
+                    const chart = agingCharts[col];
+                    if (!chart) return;
+
+                    chart.data.labels = labels;
+                    chart.data.datasets[0].data = actuals.map(a => a[col] !== undefined ? a[col] : null);
+                    chart.data.datasets[1].data = preds.map(p => p[col] !== undefined ? p[col] : null);
+                    chart.update('none');
+                });
+            }
+
+            // Aging anomaly logs
+            if (data.anomaly_logs) {
+                updateAgingLogPanel(data.anomaly_logs);
+            }
+        }
+
+        function updateAgingLogPanel(logs) {
+            const container = document.getElementById('agingLogEntries');
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">이상 감지 없음</p>';
+                return;
+            }
+            container.innerHTML = logs.slice(0, 30).map(log => {
+                const isOngoing = log.status === 'ongoing';
+                const severity = log.max_error_pct >= 10 ? 'critical' : 'warning';
+                const colName = log.column || log.type;
+                return `<div class="log-entry ${severity}">
+                    <div class="log-time">${log.start_time || ''} ${isOngoing ? '(진행중)' : `(${log.duration_sec?.toFixed(0) || 0}초)`}</div>
+                    <div class="log-type">${colName} - 최대오차: ${log.max_error_pct?.toFixed(2) || 0}%</div>
+                </div>`;
+            }).join('');
+        }
+
+        // ===== Intervals (이상 로그 탭) =====
+        async function loadIntervals() {
+            try {
+                const typeFilter = document.getElementById('logTypeFilter')?.value || '';
+                const sevFilter = document.getElementById('logSeverityFilter')?.value || '';
+                let url = '/api/intervals?';
+                if (typeFilter) url += `anomaly_type=${typeFilter}&`;
+                if (sevFilter) url += `severity=${sevFilter}&`;
+
+                const resp = await fetch(url);
+                const data = await resp.json();
+                displayIntervals(data.intervals || []);
+
+                // Update summary
+                const summResp = await fetch('/api/logs/summary');
+                const summ = await summResp.json();
+                document.getElementById('totalIntervals').textContent = summ.total || 0;
+                document.getElementById('arFluctCount').textContent = summ.by_type?.AR_FLUCTUATION || 0;
+                document.getElementById('pwpdsPredCount').textContent = summ.by_type?.PWPDS_PREDICTION_ANOMALY || 0;
+                document.getElementById('magnetCount').textContent = summ.by_type?.MAGNET_CONTAMINATION || 0;
+                document.getElementById('gasFlowCount').textContent = summ.by_type?.GAS_FLOW_ANOMALY || 0;
+                document.getElementById('warningCount').textContent = summ.by_severity?.warning || 0;
+                document.getElementById('criticalCount').textContent = summ.by_severity?.critical || 0;
+            } catch(e) { console.error('Load intervals error:', e); }
+        }
+
+        function displayIntervals(intervals) {
+            const container = document.getElementById('intervalsList');
+            if (!intervals || intervals.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 20px; color: #aaa;">이상 구간이 없습니다.</p>';
+                return;
+            }
+            container.innerHTML = intervals.map(inv => {
+                const analysis = inv.analysis || {};
+                return `<div class="interval-item ${inv.severity}" onclick="this.classList.toggle('expanded')">
+                    <div class="interval-header">
+                        <div>
+                            <strong>${inv.anomaly_type}</strong>
+                            <span style="color: ${inv.severity === 'critical' ? '#ff6b6b' : '#ff9800'}; margin-left: 10px;">[${inv.severity}]</span>
+                            <span style="color: #aaa; margin-left: 10px;">공정: ${inv.process_id}</span>
+                        </div>
+                        <div style="color: #aaa; font-size: 0.85em;">
+                            ${inv.start_timestamp} ~ ${inv.end_timestamp || '진행중'} (${inv.duration_points || 0}초)
+                        </div>
+                    </div>
+                    <div class="interval-detail">
+                        <p><strong>설명:</strong> ${inv.description || ''}</p>
+                        ${analysis.summary ? `<p style="margin-top: 5px;"><strong>요약:</strong> ${analysis.summary}</p>` : ''}
+                        ${analysis.cause ? `<p style="margin-top: 5px; color: #ffd93d;"><strong>원인:</strong> ${analysis.cause}</p>` : ''}
+                        ${analysis.impact ? `<p style="margin-top: 5px; color: #ff9800;"><strong>영향:</strong> ${analysis.impact}</p>` : ''}
+                        ${analysis.details ? `<ul style="margin-top: 5px; padding-left: 20px;">${analysis.details.map(d => `<li>${d}</li>`).join('')}</ul>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ===== Reports =====
+        async function loadProcessesForSelect() {
+            try {
+                const resp = await fetch('/api/history/processes');
+                const data = await resp.json();
+                const procs = data.processes || [];
+
+                ['reportProcessSelect', 'historyProcessSelect'].forEach(id => {
+                    const sel = document.getElementById(id);
+                    sel.innerHTML = '<option value="">공정을 선택하세요</option>';
+                    procs.forEach(pid => {
+                        const opt = document.createElement('option');
+                        opt.value = pid;
+                        opt.textContent = pid;
+                        sel.appendChild(opt);
+                    });
+                });
+            } catch(e) { console.error('Load processes error:', e); }
+        }
+
+        async function loadReport() {
+            const pid = document.getElementById('reportProcessSelect').value;
+            if (!pid) return alert('공정을 선택하세요.');
+            try {
+                const resp = await fetch(`/api/report/${pid}`);
+                const report = await resp.json();
+                displayReport(report);
+            } catch(e) { console.error('Load report error:', e); }
+        }
+
+        function displayReport(report) {
+            const container = document.getElementById('reportContent');
+            container.style.display = 'block';
+
+            const intervals = report.intervals || [];
+            const recommendations = report.recommendations || [];
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>공정 요약: ${report.process_id}</h2>
+                    <div class="metric-grid">
+                        <div class="metric-item"><div class="label">총 이상 구간</div><div class="value">${report.total_intervals || 0}</div></div>
+                        <div class="metric-item"><div class="label">경고</div><div class="value" style="color: #ff9800;">${report.by_severity?.warning || 0}</div></div>
+                        <div class="metric-item"><div class="label">심각</div><div class="value anomaly-high">${report.by_severity?.critical || 0}</div></div>
+                        ${Object.entries(report.by_type || {}).map(([k,v]) => `<div class="metric-item"><div class="label">${k}</div><div class="value">${v}</div></div>`).join('')}
+                    </div>
+                </div>
+
+                ${recommendations.length > 0 ? `<div class="card">
+                    <h2>권장 조치</h2>
+                    ${recommendations.map(r => `<div class="recommendation-item ${r.priority}">
+                        <strong>${r.issue}</strong><br>
+                        <span style="color: #aaa;">${r.action}</span>
+                    </div>`).join('')}
+                </div>` : ''}
+
+                ${intervals.length > 0 ? `<div class="card">
+                    <h2>이상 구간 상세</h2>
+                    ${intervals.map(inv => {
+                        const a = inv.analysis || {};
+                        return `<div class="interval-item ${inv.severity}" onclick="this.classList.toggle('expanded')">
+                            <div class="interval-header">
+                                <div><strong>${inv.anomaly_type}</strong> <span style="color: ${inv.severity==='critical'?'#ff6b6b':'#ff9800'};">[${inv.severity}]</span></div>
+                                <div style="color: #aaa; font-size: 0.85em;">${inv.start_timestamp} ~ ${inv.end_timestamp || ''} (${inv.duration_points || 0}초)</div>
+                            </div>
+                            <div class="interval-detail">
+                                ${a.summary ? `<p><strong>요약:</strong> ${a.summary}</p>` : ''}
+                                ${a.cause ? `<p style="color: #ffd93d;"><strong>원인:</strong> ${a.cause}</p>` : ''}
+                                ${a.impact ? `<p style="color: #ff9800;"><strong>영향:</strong> ${a.impact}</p>` : ''}
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>` : '<div class="card"><h2>이상 없음</h2><p>이 공정에서는 이상이 감지되지 않았습니다.</p></div>'}
+            `;
+        }
+
+        // ===== Process History =====
+        async function loadProcessHistory() {
+            const pid = document.getElementById('historyProcessSelect').value;
+            if (!pid) return alert('공정을 선택하세요.');
+            try {
+                const resp = await fetch(`/api/history/${pid}`);
+                const data = await resp.json();
+                displayProcessHistory(data);
+            } catch(e) { console.error('Load history error:', e); }
+        }
+
+        function displayProcessHistory(data) {
+            const area = document.getElementById('historyChartArea');
+            area.style.display = 'block';
+
+            const points = data.data_points || [];
+            const intervals = data.intervals || [];
+
+            if (points.length === 0) {
+                area.innerHTML = '<div class="card"><p style="text-align: center; padding: 20px;">데이터가 없습니다.</p></div>';
+                return;
+            }
+
+            // Build chart HTML
+            const chartCols = ['PWPDS.Data', 'Ar.MFC.i', 'EN4.Power', 'SBRF5.SetPower', 'PLA5.Match.DCBias'];
+            area.innerHTML = `
+                <div class="card">
+                    <h2>공정 ${data.process_id} - 데이터 (${points.length}포인트)</h2>
+                    <div style="height: 300px;"><canvas id="histPwpdsChart"></canvas></div>
+                </div>
+                <div class="charts-grid">
+                    ${chartCols.slice(1).map((col, i) => `<div class="card">
+                        <div class="chart-header"><div class="chart-title">${col}</div></div>
+                        <div style="height: 180px;"><canvas id="histChart${i}"></canvas></div>
+                    </div>`).join('')}
+                </div>
+                ${intervals.length > 0 ? `<div class="card">
+                    <h2>이상 구간 (${intervals.length}건)</h2>
+                    ${intervals.map(inv => `<div class="interval-item ${inv.severity || 'warning'}">
+                        <div class="interval-header">
+                            <div><strong>${inv.type || inv.anomaly_type || ''}</strong></div>
+                            <div style="color: #aaa; font-size: 0.85em;">인덱스 ${inv.start_index || 0} ~ ${inv.end_index || ''}</div>
+                        </div>
+                    </div>`).join('')}
+                </div>` : ''}
+            `;
+
+            // Render PWPDS history chart
+            const labels = points.map((p, i) => i.toString());
+            const pwpdsActual = points.map(p => parseFloat(p['PWPDS.Data'] || 0));
+            const pwpdsPred = points.map(p => p._cnn_predicted !== undefined ? parseFloat(p._cnn_predicted) : null);
+
+            new Chart(document.getElementById('histPwpdsChart').getContext('2d'), {
+                type: 'line',
+                data: { labels, datasets: [
+                    { label: '실제값', data: pwpdsActual, borderColor: '#00d9ff', borderWidth: 1.5, pointRadius: 0, tension: 0.3 },
+                    { label: 'CNN 예측', data: pwpdsPred, borderColor: '#6bcf7f', borderWidth: 1.5, borderDash: [5,5], pointRadius: 0, tension: 0.3 }
+                ]},
+                options: makeChartOpts(getRange('PWPDS.Data'), true)
+            });
+
+            // Render other sensor history charts
+            chartCols.slice(1).forEach((col, i) => {
+                const vals = points.map(p => parseFloat(p[col] || 0));
+                new Chart(document.getElementById(`histChart${i}`).getContext('2d'), {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: col, data: vals, borderColor: Object.values(SENSOR_COLORS)[i], borderWidth: 1.5, pointRadius: 0, tension: 0.3 }] },
+                    options: makeChartOpts(getRange(col), false)
+                });
+            });
+        }
+
+        // ===== CSV Exports =====
+        async function loadExports() {
+            try {
+                const resp = await fetch('/api/exports');
+                const data = await resp.json();
+                const container = document.getElementById('exportsList');
+                container.style.display = 'block';
+
+                if (!data.exports || data.exports.length === 0) {
+                    container.innerHTML = '<div class="card"><p style="text-align: center; padding: 20px;">CSV export 파일이 없습니다.</p></div>';
+                    return;
+                }
+                container.innerHTML = `<div class="card"><h2>CSV Export 파일</h2>
+                    <table class="log-table">
+                        <thead><tr><th>파일명</th><th>크기</th><th>생성일</th><th>다운로드</th></tr></thead>
+                        <tbody>${data.exports.map(f => `<tr>
+                            <td>${f.filename}</td>
+                            <td>${(f.size / 1024).toFixed(1)} KB</td>
+                            <td>${new Date(f.created).toLocaleString()}</td>
+                            <td><a href="/api/exports/${f.filename}" class="btn btn-primary btn-small" style="text-decoration: none; display: inline-block;">다운로드</a></td>
+                        </tr>`).join('')}</tbody>
+                    </table>
+                </div>`;
+            } catch(e) { console.error('Load exports error:', e); }
+        }
+
+        // ===== Modal =====
+        window.onclick = function(event) {
+            if (event.target === document.getElementById('modeModal')) closeModeModal();
+        }
+    </script>
+</body>
+</html>

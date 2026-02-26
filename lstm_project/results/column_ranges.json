@@ -1,0 +1,74 @@
+{
+  "PWPDS.Data": {
+    "min": 211728080.0,
+    "max": 211849920.0
+  },
+  "Ar.MFC.i": {
+    "min": 0.0,
+    "max": 151.0
+  },
+  "EN4.Power": {
+    "min": 0.0,
+    "max": 3015.0
+  },
+  "SBRF5.SetPower": {
+    "min": 0.0,
+    "max": 500.0
+  },
+  "PLA5.Match.DCBias": {
+    "min": 0.0,
+    "max": 800.0
+  },
+  "PLA5.Match.Tune.Posi": {
+    "min": 66.9,
+    "max": 80.0
+  },
+  "ULVAC.Stage1.Temp1": {
+    "min": 60.9,
+    "max": 71.2
+  },
+  "EN4.Volt": {
+    "min": 0.0,
+    "max": 800.0
+  },
+  "Ion.Gauge.i": {
+    "min": 3.12e-07,
+    "max": 0.0058
+  },
+  "EN4.Current": {
+    "min": 0.0,
+    "max": 4.9
+  },
+  "PLA5.Match.Load.Posi": {
+    "min": 70.7,
+    "max": 90.5
+  },
+  "PLA5.Match.Load.Pre": {
+    "min": 80.0,
+    "max": 80.0
+  },
+  "PLA5.Match.Tune.Pre": {
+    "min": 80.0,
+    "max": 80.0
+  },
+  "SBRF5.Forward": {
+    "min": 0.0,
+    "max": 500.0
+  },
+  "SBRF5.Reflect": {
+    "min": 0.0,
+    "max": 56.0
+  },
+  "OES.Data6": {
+    "min": 0.0,
+    "max": 0.0
+  },
+  "Line.Gauge.i": {
+    "min": 0.00422,
+    "max": 188.0
+  },
+  "Baratron.Gauge.i": {
+    "min": 0.0,
+    "max": 7.3
+  }
+}

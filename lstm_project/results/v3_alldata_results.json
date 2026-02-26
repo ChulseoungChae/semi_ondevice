@@ -1,0 +1,28 @@
+[
+  {
+    "config_name": "v3_CNN_alldata_aug20x",
+    "aug_factor": 20,
+    "best_epoch": 23,
+    "total_epochs": 53,
+    "train_time_sec": 144.66983842849731,
+    "train_samples": 117860,
+    "test_samples": 1968,
+    "MAE": 2991.666748046875,
+    "RMSE": 4989.953707200098,
+    "R2": 0.9884982109069824,
+    "MAPE": 0.0014127101749181747
+  },
+  {
+    "config_name": "v3_CNN_alldata_aug50x",
+    "aug_factor": 50,
+    "best_epoch": 29,
+    "total_epochs": 59,
+    "train_time_sec": 386.1375849246979,
+    "train_samples": 294650,
+    "test_samples": 1968,
+    "MAE": 2844.7724609375,
+    "RMSE": 4773.382239041831,
+    "R2": 0.989474892616272,
+    "MAPE": 0.001343354000709951
+  }
+]
