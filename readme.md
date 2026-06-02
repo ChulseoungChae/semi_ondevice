@@ -24,16 +24,6 @@ ssh goo4168@bigsoft.time.org -p 7783
 http://bigsoft.time.org:9300
 ```
 
-**파일 복사 (로컬 → 서버):**
-```bash
-scp -P 7783 <로컬파일> goo4168@bigsoft.time.org:<원격경로>
-```
-
-**파일 복사 (서버 → 로컬):**
-```bash
-scp -P 7783 goo4168@bigsoft.time.org:<원격경로> <로컬경로>
-```
-
 ---
 
 ## 목차
